@@ -12,6 +12,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.net.URL;
 
+
 public class FirstTest {
 
     private AppiumDriver driver;
@@ -25,7 +26,7 @@ public class FirstTest {
         capabilities.setCapability("automationName", "Appium");
         capabilities.setCapability("appPackage", "org.wikipedia");
         capabilities.setCapability("appActivity", ".main.MainActivity");
-        capabilities.setCapability("app", "C:\\projects\\mob_auto\\JavaAppiumAutomation_lesson3\\apks\\wikipedia.apk");
+        capabilities.setCapability("app", "C:\\projects\\mob_auto\\JavaAppiumAutomation_lesson3\\apks\\Wikipedia_2_7.apk");
         driver = new AndroidDriver(new URL("http://127.0.0.1:4723/wd/hub"), capabilities);
     }
 
@@ -35,25 +36,42 @@ public class FirstTest {
     }
 
     @Test
-            public void testFieldContainsText()
-    {
+    public void testSearchArticlesAndClearSearchResult() {
+        waitForElementAndClick(
+                By.id("org.wikipedia:id/fragment_onboarding_skip_button"),
+                "Cannot find Skip Button",
+                5);
+
         waitForElementAndClick(
                 By.xpath("//*[contains(@text, \"Search Wikipedia\")]"),
                 "Cannot find search Wikipedia input",
-                5
-        );
+                5);
 
-        assertElementHasText(
-                By.id("org.wikipedia:id/search_src_text"),
-                "Search…",
-                "Cannot find text: \"Search…\""
-        );
+        waitForElementAndSendKeys(
+                By.xpath("//*[contains(@text, \"Search\")]"),
+                "test case",
+                "Cannot find search input: \"test case\"",
+                5);
+
+        assertFoundSeveralArticles("org.wikipedia:id/search_results_list",
+                "org.wikipedia:id/page_list_item_title");
+
+        waitForElementAndClick(
+                By.id("org.wikipedia:id/search_close_btn"),
+                "Cannot find X to cancel search",
+                5);
+
+
+        waitForElementNotPresent(
+                By.id("org.wikipedia:id/search_close_btn"),
+                "X is still present on the page",
+                5);
 
     }
 
-    private WebElement waitForElementPresent(By by, String error_message, long timeoutSeconds) {
-        WebDriverWait wait = new WebDriverWait(driver, timeoutSeconds);
-        wait.withMessage(error_message + "\n");
+    private WebElement waitForElementPresent(By by, String errorMessage, long timeOutInSeconds) {
+        WebDriverWait wait = new WebDriverWait(driver, timeOutInSeconds);
+        wait.withMessage(errorMessage + "\n");
         return wait.until(
                 ExpectedConditions.presenceOfElementLocated(by)
         );
@@ -66,9 +84,24 @@ public class FirstTest {
         return element;
     }
 
-    private void assertElementHasText (By by, String expectedText, String errorMessage) {
-        WebElement element = waitForElementPresent(by, errorMessage, 5);
-        Assert.assertTrue(element.getAttribute("text").equals(expectedText));
+
+    private WebElement waitForElementAndSendKeys(By by, String value, String error_message, long timeOutInSeconds) {
+        WebElement element = waitForElementPresent(by, error_message, timeOutInSeconds);
+        element.sendKeys(value);
+        return element;
+    }
+
+    private void assertFoundSeveralArticles(String viewName, String elementName) {
+        WebElement elementView = waitForElementPresent(By.id(viewName), "Cannot find element: " + viewName, 5);
+        int size = elementView.findElements(By.id(elementName)).size();
+        Assert.assertTrue("Cannot find several articles", size > 1);
+    }
+
+    private boolean waitForElementNotPresent(By by, String error_message, long timeoutInSeconds) {
+        WebDriverWait wait = new WebDriverWait(driver, timeoutInSeconds);
+        wait.withMessage(error_message + "\n");
+        return wait.until(
+                ExpectedConditions.invisibilityOfElementLocated(by));
     }
 
 }
